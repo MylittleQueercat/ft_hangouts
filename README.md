@@ -40,7 +40,7 @@ The first build also needs network access to download Gradle and build dependenc
    ```sh
    export JAVA_HOME=/path/to/jdk-17
    export ANDROID_HOME=/path/to/Android/Sdk
-   export PATH="$ANDROID_HOME/platform-tools:$PATH"
+   export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
    ```
 
 3. Start a virtual device in Android Studio Device Manager.
@@ -73,6 +73,70 @@ The first build also needs network access to download Gradle and build dependenc
 
 You can also select the `ft_hangouts` icon on the device.
 The APK is at `app/build/outputs/apk/debug/app-debug.apk`.
+
+## Stop the emulator
+
+1. List the running devices.
+
+   ```sh
+   adb devices
+   ```
+
+2. Find the emulator serial in the list. Replace `emulator-5554` with that serial.
+
+   ```sh
+   adb -s emulator-5554 emu kill
+   ```
+
+You can also select **Stop** for the device in Android Studio Device Manager.
+
+## Test different screen sizes
+
+1. Open Android Studio Device Manager. Create one small phone AVD and one large phone or tablet AVD. Select a system image with API 26 or higher for each AVD.
+
+2. List the AVD names.
+
+   ```sh
+   emulator -list-avds
+   ```
+
+3. Start the small phone AVD. Replace `SMALL_PHONE_AVD` with its name. Keep this terminal open.
+
+   ```sh
+   emulator -avd SMALL_PHONE_AVD
+   ```
+
+4. Use a second terminal. Set the environment variables from **Build and run**. List the running devices.
+
+   ```sh
+   adb devices
+   ```
+
+5. Replace `emulator-5554` with the listed serial. Install and start the application.
+
+   ```sh
+   adb -s emulator-5554 install -r app/build/outputs/apk/debug/app-debug.apk
+   adb -s emulator-5554 shell am start -n com.hguo.fthangouts/.MainActivity
+   ```
+
+6. Check the contact list, contact form, contact details, and conversation screen. Rotate the emulator. Check each screen in portrait and landscape orientation.
+
+7. Stop the current AVD. Replace `emulator-5554` with its serial.
+
+   ```sh
+   adb -s emulator-5554 emu kill
+   ```
+
+8. Start the large phone or tablet AVD. Replace `LARGE_AVD` with its name.
+
+   ```sh
+   emulator -avd LARGE_AVD
+   ```
+
+9. Repeat steps 4 through 7. Use the serial of the large AVD.
+
+Use a phone AVD that supports telephony to test SMS messages and calls.
+Use the large AVD to check the layout on a larger screen.
 
 ## Use the application
 
