@@ -35,25 +35,32 @@ The first build also needs network access to download Gradle and build dependenc
 
 1. Open a terminal in the project directory.
 
-2. Set the paths to your JDK and Android SDK. Replace the example paths with your paths.
+2. On this computer, load the Android SDK environment and select the installed JDK 17. On another computer, replace these paths with your own JDK and SDK paths.
 
    ```sh
-   export JAVA_HOME=/path/to/jdk-17
-   export ANDROID_HOME=/path/to/Android/Sdk
-   export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
+   . /home/hguo/sgoinfre/hguo/mobile-dev/env.sh
+   export JAVA_HOME=/home/hguo/sgoinfre/hguo/mobile-dev/gradle-cache/jdks/eclipse_adoptium-17-amd64-linux.2
    ```
 
-3. Start a virtual device in Android Studio Device Manager.
+3. Open a second terminal on this computer to start the existing `Pixel_10` emulator. Keep that terminal open while the emulator runs. The `ANDROID_AVD_HOME` override points to where this computer stores its virtual devices.
+
+   ```sh
+   . /home/hguo/sgoinfre/hguo/mobile-dev/env.sh
+   export ANDROID_AVD_HOME=/home/hguo/sgoinfre/hguo/mobile-dev/android-avd
+   emulator -avd Pixel_10
+   ```
+
+   On another computer, use `emulator -list-avds` to find an available AVD name, then replace `Pixel_10` with that name. You can also start the emulator from Android Studio Device Manager.
 
    You can use a physical Android device instead. Enable USB debugging. Connect the device by USB.
 
-4. Make sure that `adb` lists the device.
+4. In the first terminal, wait until `adb` lists the emulator as `device` before continuing. If the list is empty, wait for the emulator to finish booting and try again.
 
    ```sh
    adb devices
    ```
 
-5. Build the debug APK. Run this command from the project directory.
+5. Build the debug APK from the project directory. Continue only after the build succeeds.
 
    ```sh
    ./gradlew :app:assembleDebug
@@ -92,66 +99,57 @@ You can also select **Stop** for the device in Android Studio Device Manager.
 
 ## Test different screen sizes
 
-1. Open Android Studio Device Manager. Create one small phone AVD and one large phone or tablet AVD. Select a system image with API 26 or higher for each AVD.
-
-2. List the AVD names.
+1. Keep the emulator open with `ft_hangouts` installed. Open a new terminal on the computer, not inside the emulator. Load the Android environment and list the devices.
 
    ```sh
-   emulator -list-avds
-   ```
-
-3. Start the small phone AVD. Replace `SMALL_PHONE_AVD` with its name. Keep this terminal open.
-
-   ```sh
-   emulator -avd SMALL_PHONE_AVD
-   ```
-
-4. Use a second terminal. Set the environment variables from **Build and run**. List the running devices.
-
-   ```sh
+   . /home/hguo/sgoinfre/hguo/mobile-dev/env.sh
    adb devices
    ```
 
-5. Replace `emulator-5554` with the listed serial. Install and start the application.
+2. When the list shows `emulator-5554    device`, temporarily set the screen size and density.
 
    ```sh
-   adb -s emulator-5554 install -r app/build/outputs/apk/debug/app-debug.apk
-   adb -s emulator-5554 shell am start -n com.hguo.fthangouts/.MainActivity
+   adb shell wm size 720x1280
+   adb shell wm density 320
    ```
 
-6. Check the contact list, contact form, contact details, and conversation screen. Rotate the emulator. Check each screen in portrait and landscape orientation.
+3. Return to the emulator and check the contact list, contact form, contact details, and conversation screen. Rotate the emulator and check each screen in portrait and landscape orientation.
 
-7. Stop the current AVD. Replace `emulator-5554` with its serial.
+4. After testing, restore the original settings in the same computer terminal.
 
    ```sh
-   adb -s emulator-5554 emu kill
+   adb shell wm size reset
+   adb shell wm density reset
    ```
 
-8. Start the large phone or tablet AVD. Replace `LARGE_AVD` with its name.
+If `adb devices` lists more than one device, add `-s emulator-5554` after `adb` in each command, using the serial of the emulator you want to test. This setting checks a 360 x 640 dp phone screen; use a large phone or tablet AVD to check larger layouts. Use a phone AVD that supports telephony to test SMS messages and calls.
 
-   ```sh
-   emulator -avd LARGE_AVD
-   ```
+## Test incoming SMS
 
-9. Repeat steps 4 through 7. Use the serial of the large AVD.
+You do not need to know the emulator's phone number or use a second phone to test incoming SMS. With the emulator running and USB debugging available, send a simulated message from a computer terminal:
 
-Use a phone AVD that supports telephony to test SMS messages and calls.
-Use the large AVD to check the layout on a larger screen.
+```sh
+adb emu sms send 5550101 "Hello from an unknown number"
+```
+
+The number is the simulated sender number. If the app has no contact for it, receiving the message creates a contact named `5550101` and adds the message to its conversation. If more than one emulator is running, target one with `adb -s emulator-5554 emu sms send 5550101 "Hello from an unknown number"`.
 
 ## Use the application
 
-- Add a contact. Enter a name and a phone number. You can also add an email address, an address, and notes.
+- Add a contact. Enter a name and a phone number. You can also add an email address, an address, notes, pronouns, and a birthday.
+- Use the alphabet index beside the contact list to jump to the first name beginning with that letter. Star a favorite in its details to pin it above the alphabetical list, or mark it as an emergency contact.
 - Select a contact to see its details. Select **Edit contact** to change it. Select **Delete contact** to remove it.
 - Open a conversation to send an SMS message. The conversation shows sent and received messages.
-- Open the menu at the top right to change the header color.
+- Open the menu at the top right to choose a theme. Its gradient, line icon, buttons, highlights, and message bubbles update together.
 - Change the device language to French to use the French interface. Use English to return to the English interface.
 - Press Home. Open the application again to see the time when it went to the background.
 - Turn the device to use portrait or landscape orientation.
 - Select **Choose photo** in a contact form to add a photo.
 - Select **Call contact** in contact details to start a call.
+- Select **Block in app** in contact details to stop calls and outgoing messages here and ignore new SMS from that number in ft_hangouts. The contact and existing conversation remain visible. This does not block SMS or calls system-wide.
 
 The application requests SMS and phone permissions when a function needs them.
 An incoming SMS from an unknown number adds a contact. The number becomes the contact name.
 
-The interface uses the visual direction of [Multi-Step Service Request Flow](https://dribbble.com/shots/27188838-Multi-Step-Service-Request-Flow-SaaS-Mobile-UI).
+The interface uses a near-white canvas, dark text, and restrained accents that follow the selected theme. Primary actions use the theme's gradient. Navigation and actions use native vector icons.
 The launcher icon uses the [42 logo geometry](https://commons.wikimedia.org/wiki/File:42_Logo.svg).

@@ -28,8 +28,11 @@ public final class SmsReceiver extends BroadcastReceiver {
         }
         try (ContactDatabase database = new ContactDatabase(context)) {
             Contact contact = database.findContactByPhone(sender);
+            if (contact != null && contact.blocked) {
+                return;
+            }
             long contactId = contact == null
-                    ? database.createContact(sender, sender, "", "", "", "")
+                    ? database.createContact(sender, sender, "", "", "", "", "", "")
                     : contact.id;
             database.addMessage(contactId, body.toString(), Message.RECEIVED,
                     System.currentTimeMillis(), Message.COMPLETE);

@@ -12,9 +12,10 @@ import java.util.List;
 
 final class ContactDatabase extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "hangouts.db";
-    private static final int DATABASE_VERSION = 3;
+    private static final int DATABASE_VERSION = 5;
     private static final String[] COLUMNS = {
-            "id", "name", "phone", "email", "address", "notes", "photo_uri"
+            "id", "name", "phone", "email", "address", "notes", "photo_uri",
+            "starred", "emergency", "pronouns", "birthday", "blocked"
     };
 
     ContactDatabase(Context context) {
@@ -35,7 +36,12 @@ final class ContactDatabase extends SQLiteOpenHelper {
                 + "email TEXT NOT NULL DEFAULT '', "
                 + "address TEXT NOT NULL DEFAULT '', "
                 + "notes TEXT NOT NULL DEFAULT '', "
-                + "photo_uri TEXT NOT NULL DEFAULT '')");
+                + "photo_uri TEXT NOT NULL DEFAULT '', "
+                + "starred INTEGER NOT NULL DEFAULT 0, "
+                + "emergency INTEGER NOT NULL DEFAULT 0, "
+                + "pronouns TEXT NOT NULL DEFAULT '', "
+                + "birthday TEXT NOT NULL DEFAULT '', "
+                + "blocked INTEGER NOT NULL DEFAULT 0)");
         createMessagesTable(database);
     }
 
@@ -47,12 +53,21 @@ final class ContactDatabase extends SQLiteOpenHelper {
         if (oldVersion < 3) {
             database.execSQL("ALTER TABLE contacts ADD COLUMN photo_uri TEXT NOT NULL DEFAULT ''");
         }
+        if (oldVersion < 4) {
+            database.execSQL("ALTER TABLE contacts ADD COLUMN starred INTEGER NOT NULL DEFAULT 0");
+            database.execSQL("ALTER TABLE contacts ADD COLUMN emergency INTEGER NOT NULL DEFAULT 0");
+        }
+        if (oldVersion < 5) {
+            database.execSQL("ALTER TABLE contacts ADD COLUMN pronouns TEXT NOT NULL DEFAULT ''");
+            database.execSQL("ALTER TABLE contacts ADD COLUMN birthday TEXT NOT NULL DEFAULT ''");
+            database.execSQL("ALTER TABLE contacts ADD COLUMN blocked INTEGER NOT NULL DEFAULT 0");
+        }
     }
 
     List<Contact> listContacts() {
         List<Contact> contacts = new ArrayList<>();
         try (Cursor cursor = getReadableDatabase().query("contacts", COLUMNS,
-                null, null, null, null, "name COLLATE NOCASE ASC, id ASC")) {
+                null, null, null, null, "starred DESC, name COLLATE NOCASE ASC, id ASC")) {
             while (cursor.moveToNext()) {
                 contacts.add(readContact(cursor));
             }
@@ -68,20 +83,42 @@ final class ContactDatabase extends SQLiteOpenHelper {
     }
 
     long createContact(String name, String phone, String email, String address, String notes,
-                       String photoUri) {
+                       String photoUri, String pronouns, String birthday) {
         return getWritableDatabase().insertOrThrow("contacts", null,
-                values(name, phone, email, address, notes, photoUri));
+                values(name, phone, email, address, notes, photoUri, pronouns, birthday));
     }
 
     boolean updateContact(long id, String name, String phone, String email,
-                          String address, String notes, String photoUri) {
+                          String address, String notes, String photoUri, String pronouns,
+                          String birthday) {
         return getWritableDatabase().update("contacts",
-                values(name, phone, email, address, notes, photoUri),
+                values(name, phone, email, address, notes, photoUri, pronouns, birthday),
                 "id = ?", new String[]{String.valueOf(id)}) == 1;
     }
 
     boolean deleteContact(long id) {
         return getWritableDatabase().delete("contacts", "id = ?",
+                new String[]{String.valueOf(id)}) == 1;
+    }
+
+    boolean setStarred(long id, boolean starred) {
+        ContentValues values = new ContentValues();
+        values.put("starred", starred ? 1 : 0);
+        return getWritableDatabase().update("contacts", values, "id = ?",
+                new String[]{String.valueOf(id)}) == 1;
+    }
+
+    boolean setEmergency(long id, boolean emergency) {
+        ContentValues values = new ContentValues();
+        values.put("emergency", emergency ? 1 : 0);
+        return getWritableDatabase().update("contacts", values, "id = ?",
+                new String[]{String.valueOf(id)}) == 1;
+    }
+
+    boolean setBlocked(long id, boolean blocked) {
+        ContentValues values = new ContentValues();
+        values.put("blocked", blocked ? 1 : 0);
+        return getWritableDatabase().update("contacts", values, "id = ?",
                 new String[]{String.valueOf(id)}) == 1;
     }
 
@@ -106,6 +143,19 @@ final class ContactDatabase extends SQLiteOpenHelper {
             }
         }
         return messages;
+    }
+
+    Message latestMessage(long contactId) {
+        try (Cursor cursor = getReadableDatabase().query("messages",
+                new String[]{"id", "contact_id", "body", "direction", "timestamp", "status"},
+                "contact_id = ?", new String[]{String.valueOf(contactId)}, null, null,
+                "timestamp DESC, id DESC", "1")) {
+            if (!cursor.moveToFirst()) {
+                return null;
+            }
+            return new Message(cursor.getLong(0), cursor.getLong(1), cursor.getString(2),
+                    cursor.getInt(3), cursor.getLong(4), cursor.getInt(5));
+        }
     }
 
     long addMessage(long contactId, String body, int direction, long timestamp, int status) {
@@ -141,7 +191,8 @@ final class ContactDatabase extends SQLiteOpenHelper {
     }
 
     private static ContentValues values(String name, String phone, String email,
-                                        String address, String notes, String photoUri) {
+                                        String address, String notes, String photoUri,
+                                        String pronouns, String birthday) {
         ContentValues values = new ContentValues();
         values.put("name", name);
         values.put("phone", phone);
@@ -149,12 +200,15 @@ final class ContactDatabase extends SQLiteOpenHelper {
         values.put("address", address);
         values.put("notes", notes);
         values.put("photo_uri", photoUri);
+        values.put("pronouns", pronouns);
+        values.put("birthday", birthday);
         return values;
     }
 
     private static Contact readContact(Cursor cursor) {
         return new Contact(cursor.getLong(0), cursor.getString(1), cursor.getString(2),
                 cursor.getString(3), cursor.getString(4), cursor.getString(5),
-                cursor.getString(6));
+                cursor.getString(6), cursor.getString(9), cursor.getString(10),
+                cursor.getInt(7) != 0, cursor.getInt(8) != 0, cursor.getInt(11) != 0);
     }
 }
