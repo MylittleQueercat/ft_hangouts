@@ -1,3 +1,4 @@
+// This class holds the data for one contact.
 package com.hguo.fthangouts;
 
 final class Contact {

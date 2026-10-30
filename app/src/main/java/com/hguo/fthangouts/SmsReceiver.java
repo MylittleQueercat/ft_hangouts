@@ -1,3 +1,4 @@
+// This receiver saves incoming SMS messages to the local database.
 package com.hguo.fthangouts;
 
 import android.content.BroadcastReceiver;
@@ -26,6 +27,7 @@ public final class SmsReceiver extends BroadcastReceiver {
                 body.append(part.getMessageBody());
             }
         }
+        // Use the sender number as the name for a new contact.
         try (ContactDatabase database = new ContactDatabase(context)) {
             Contact contact = database.findContactByPhone(sender);
             if (contact != null && contact.blocked) {

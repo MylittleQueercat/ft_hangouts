@@ -1,3 +1,4 @@
+// This file sets the Android app ID, SDK levels, and Java version.
 apply plugin: 'com.android.application'
 
 android {

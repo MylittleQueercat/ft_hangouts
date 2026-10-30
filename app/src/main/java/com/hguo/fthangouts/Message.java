@@ -1,3 +1,4 @@
+// This class holds the data and send status for one text message.
 package com.hguo.fthangouts;
 
 final class Message {

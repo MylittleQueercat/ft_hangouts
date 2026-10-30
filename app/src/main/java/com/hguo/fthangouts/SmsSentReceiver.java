@@ -1,3 +1,4 @@
+// This receiver saves the result of an outgoing SMS attempt.
 package com.hguo.fthangouts;
 
 import android.app.Activity;

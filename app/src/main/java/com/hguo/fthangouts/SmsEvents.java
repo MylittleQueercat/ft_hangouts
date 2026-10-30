@@ -1,3 +1,4 @@
+// This class sends an internal event when message data changes.
 package com.hguo.fthangouts;
 
 import android.content.Context;

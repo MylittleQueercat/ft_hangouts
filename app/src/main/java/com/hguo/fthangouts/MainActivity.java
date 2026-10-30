@@ -1,3 +1,5 @@
+// This activity builds the screens and handles user actions.
+// It also manages permissions, themes, photos, calls, and messages.
 package com.hguo.fthangouts;
 
 import android.app.Activity;
@@ -173,6 +175,7 @@ public final class MainActivity extends Activity {
     @Override
     protected void onStart() {
         super.onStart();
+        // Show the saved time when the app returns to the foreground.
         long backgroundedAt = getPreferences(MODE_PRIVATE).getLong(PREF_BACKGROUNDED_AT, 0);
         if (backgroundedAt != 0) {
             getPreferences(MODE_PRIVATE).edit().remove(PREF_BACKGROUNDED_AT).apply();
@@ -202,6 +205,7 @@ public final class MainActivity extends Activity {
     @Override
     protected void onStop() {
         unregisterReceiver(messageChangedReceiver);
+        // Save the time when the app leaves the foreground.
         if (!isChangingConfigurations()) {
             getPreferences(MODE_PRIVATE).edit()
                     .putLong(PREF_BACKGROUNDED_AT, System.currentTimeMillis()).apply();
@@ -291,6 +295,7 @@ public final class MainActivity extends Activity {
         super.onDestroy();
     }
 
+    // Select the screen that matches the current app state.
     private void render() {
         if (screen == DETAILS) {
             renderDetails();
@@ -340,6 +345,7 @@ public final class MainActivity extends Activity {
         }
     }
 
+    // Read contacts from SQLite and build the contact list.
     private void renderList() {
         LinearLayout page = page(R.string.contacts, false);
         Button add = button(R.string.add_contact);
@@ -541,6 +547,7 @@ public final class MainActivity extends Activity {
         frame.addView(indexScroll, params);
     }
 
+    // Show one contact and its available actions.
     private void renderDetails() {
         Contact contact = database.getContact(selectedId);
         if (contact == null) {
@@ -685,6 +692,7 @@ public final class MainActivity extends Activity {
         page.addView(delete, blockParams(dp(22)));
     }
 
+    // Build the form for a new or existing contact.
     private void renderForm() {
         Contact contact = selectedId >= 0 ? database.getContact(selectedId) : null;
         if (selectedId >= 0 && contact == null) {
@@ -819,6 +827,7 @@ public final class MainActivity extends Activity {
         String notes = notesField.getText().toString().trim();
         String pronouns = pronounsField.getText().toString().trim();
         String birthday = birthdayField.getText().toString().trim();
+        // Save the form in SQLite, then show the saved contact.
         if (selectedId < 0) {
             selectedId = database.createContact(name, phone, email, address, notes, photoUri,
                     pronouns, birthday);
@@ -849,6 +858,7 @@ public final class MainActivity extends Activity {
         dialog.show();
     }
 
+    // Read and display the messages for the selected contact.
     private void renderConversation() {
         Contact contact = database.getContact(selectedId);
         if (contact == null) {
@@ -946,6 +956,7 @@ public final class MainActivity extends Activity {
         scroll.post(() -> scroll.fullScroll(View.FOCUS_DOWN));
     }
 
+    // Save a message before asking Android to send it.
     private void sendMessage(Contact contact) {
         Contact current = database.getContact(contact.id);
         if (current == null || current.blocked) {
@@ -1060,6 +1071,7 @@ public final class MainActivity extends Activity {
         photoPreview.setVisibility(View.VISIBLE);
     }
 
+    // Load a smaller image to limit memory use.
     private boolean showPhoto(ImageView image, String uriText) {
         if (uriText == null || uriText.isEmpty()) {
             image.setImageDrawable(null);
@@ -1102,6 +1114,7 @@ public final class MainActivity extends Activity {
         }
     }
 
+    // Build the shared page header and content area.
     private LinearLayout page(int title, boolean back) {
         boolean landscape = isLandscape();
         LinearLayout outer = new LinearLayout(this);

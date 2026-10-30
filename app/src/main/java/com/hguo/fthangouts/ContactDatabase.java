@@ -1,3 +1,5 @@
+// This helper creates and updates the local SQLite database.
+// It also reads and writes contacts and text messages.
 package com.hguo.fthangouts;
 
 import android.content.ContentValues;
@@ -22,11 +24,13 @@ final class ContactDatabase extends SQLiteOpenHelper {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
+    // Enable contact-to-message foreign key rules.
     @Override
     public void onConfigure(SQLiteDatabase database) {
         database.setForeignKeyConstraintsEnabled(true);
     }
 
+    // Create the contact and message tables for a new install.
     @Override
     public void onCreate(SQLiteDatabase database) {
         database.execSQL("CREATE TABLE contacts ("
@@ -45,6 +49,7 @@ final class ContactDatabase extends SQLiteOpenHelper {
         createMessagesTable(database);
     }
 
+    // Add new columns when the database version changes.
     @Override
     public void onUpgrade(SQLiteDatabase database, int oldVersion, int newVersion) {
         if (oldVersion < 2) {

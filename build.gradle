@@ -1,3 +1,4 @@
+// This file selects the Android Gradle Plugin used to build the app.
 buildscript {
     repositories {
         google()
