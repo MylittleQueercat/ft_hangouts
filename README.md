@@ -97,6 +97,16 @@ The APK is at `app/build/outputs/apk/debug/app-debug.apk`.
 
 You can also select **Stop** for the device in Android Studio Device Manager.
 
+## Clear local app data
+
+To delete the app's local contacts, messages, and saved preferences, run this command while the device is online:
+
+```sh
+adb shell pm clear com.hguo.fthangouts
+```
+
+This clears the app's SQLite database and preferences. It does not uninstall the app. Check `adb devices` first. The device must show `device`, not `offline`.
+
 ## Test different screen sizes
 
 1. Keep the emulator open with `ft_hangouts` installed. Open a new terminal on the computer, not inside the emulator. Load the Android environment and list the devices.
